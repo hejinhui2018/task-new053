@@ -1,4 +1,5 @@
 import type { BookPage, StudioState } from '../types'
+import type { BaselineSnapshot, GangWorkspace, History } from './gang/workspace'
 
 /** 内置 16 页产品手册（骑马钉 4 张纸） */
 export function createDefaultBrochure(): BookPage[] {
@@ -59,6 +60,49 @@ export function saveState(state: StudioState): void {
 export function clearState(): void {
   try {
     localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 多订单合版工作区（独立版本键，不影响原单书拼版状态）
+// ---------------------------------------------------------------------------
+
+const GANG_KEY = 'imposition-studio:gang-v1'
+
+export interface GangPersist {
+  version: 1
+  workspace: GangWorkspace
+  history: History
+  baseline: BaselineSnapshot | null
+}
+
+export function loadGangState(): GangPersist | null {
+  try {
+    const raw = localStorage.getItem(GANG_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as GangPersist
+    if (parsed.version !== 1 || !parsed.workspace || !Array.isArray(parsed.workspace.orders)) {
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+export function saveGangState(state: GangPersist): void {
+  try {
+    localStorage.setItem(GANG_KEY, JSON.stringify(state))
+  } catch {
+    // 存储失败不影响使用
+  }
+}
+
+export function clearGangState(): void {
+  try {
+    localStorage.removeItem(GANG_KEY)
   } catch {
     // ignore
   }

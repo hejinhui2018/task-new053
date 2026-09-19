@@ -2,13 +2,45 @@ import { useEffect, useMemo, useState } from 'react'
 import PageList from './components/PageList'
 import SheetView from './components/SheetView'
 import FoldPreview from './components/FoldPreview'
+import GangPlanner from './components/gang/GangPlanner'
 import { impose, nextId } from './lib/imposition'
 import { clearState, createDefaultBrochure, loadState, saveState } from './lib/storage'
 import type { BookPage, FlipMode } from './types'
 
 const ADD_COLORS = ['#e8eef7', '#fdeee8', '#e9f6ee', '#f4ecf7', '#fbf3dd', '#e6f4f5']
+const VIEW_KEY = 'imposition-studio:view'
+
+type View = 'single' | 'gang'
 
 export default function App() {
+  const [view, setView] = useState<View>(() =>
+    localStorage.getItem(VIEW_KEY) === 'gang' ? 'gang' : 'single',
+  )
+  const switchView = (v: View) => {
+    setView(v)
+    try {
+      localStorage.setItem(VIEW_KEY, v)
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <>
+      <div className="view-switch" role="tablist" aria-label="工作台切换">
+        <button className={view === 'single' ? 'active' : ''} onClick={() => switchView('single')}>
+          单书拼版
+        </button>
+        <button className={view === 'gang' ? 'active' : ''} onClick={() => switchView('gang')}>
+          多单合版
+        </button>
+      </div>
+      {view === 'gang' ? <GangPlanner /> : <SingleBookStudio />}
+    </>
+  )
+}
+
+function SingleBookStudio() {
   const initial = useMemo(() => loadState(), [])
   const [pages, setPages] = useState<BookPage[]>(
     () => initial?.pages ?? createDefaultBrochure(),
