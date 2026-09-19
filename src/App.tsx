@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import PageList from './components/PageList'
 import SheetView from './components/SheetView'
 import FoldPreview from './components/FoldPreview'
+import GangWorkspace from './components/gang/GangWorkspace'
 import { impose, nextId } from './lib/imposition'
 import { clearState, createDefaultBrochure, loadState, saveState } from './lib/storage'
 import type { BookPage, FlipMode } from './types'
 
 const ADD_COLORS = ['#e8eef7', '#fdeee8', '#e9f6ee', '#f4ecf7', '#fbf3dd', '#e6f4f5']
 
+type View = 'book' | 'gang'
+
 export default function App() {
+  const [view, setView] = useState<View>('book')
   const initial = useMemo(() => loadState(), [])
   const [pages, setPages] = useState<BookPage[]>(
     () => initial?.pages ?? createDefaultBrochure(),
@@ -111,53 +115,75 @@ export default function App() {
     <>
       <header className="app-header">
         <h1>画册拼版台</h1>
-        <span className="sub">骑马钉 · 送印前印张与折叠预演</span>
-        <div className="spacer" />
-        <span className="sub">
-          来稿 {pages.length} 页 → 成书 {total} 页 · {sheets.length} 张纸
-          {errors > 0 && <span style={{ color: 'var(--red)', marginLeft: 8 }}>● {errors} 错误</span>}
-          {warnings > 0 && <span style={{ color: 'var(--amber)', marginLeft: 8 }}>● {warnings} 警告</span>}
-        </span>
-        <div className="flip-toggle" role="group" aria-label="翻面方式">
-          <button
-            className={flip === 'long' ? 'active' : ''}
-            onClick={() => setFlip('long')}
-            title="左右翻页（普通书刊）"
-          >
-            长边翻转
+        <div className="view-toggle" role="group" aria-label="工作区切换">
+          <button className={view === 'book' ? 'active' : ''} onClick={() => setView('book')}>
+            单本拼版
           </button>
-          <button
-            className={flip === 'short' ? 'active' : ''}
-            onClick={() => setFlip('short')}
-            title="上下翻页（挂历式），背面整版旋转 180°"
-          >
-            短边翻转
+          <button className={view === 'gang' ? 'active' : ''} onClick={() => setView('gang')}>
+            多订单合版
           </button>
         </div>
-        <button className="btn danger" onClick={resetAll}>重置手册</button>
+        {view === 'book' && (
+          <>
+            <span className="sub">骑马钉 · 送印前印张与折叠预演</span>
+            <div className="spacer" />
+            <span className="sub">
+              来稿 {pages.length} 页 → 成书 {total} 页 · {sheets.length} 张纸
+              {errors > 0 && <span style={{ color: 'var(--red)', marginLeft: 8 }}>● {errors} 错误</span>}
+              {warnings > 0 && <span style={{ color: 'var(--amber)', marginLeft: 8 }}>● {warnings} 警告</span>}
+            </span>
+            <div className="flip-toggle" role="group" aria-label="翻面方式">
+              <button
+                className={flip === 'long' ? 'active' : ''}
+                onClick={() => setFlip('long')}
+                title="左右翻页（普通书刊）"
+              >
+                长边翻转
+              </button>
+              <button
+                className={flip === 'short' ? 'active' : ''}
+                onClick={() => setFlip('short')}
+                title="上下翻页（挂历式），背面整版旋转 180°"
+              >
+                短边翻转
+              </button>
+            </div>
+            <button className="btn danger" onClick={resetAll}>重置手册</button>
+          </>
+        )}
+        {view === 'gang' && (
+          <>
+            <span className="sub">多订单 · 同纸同纹合版 · 直线裁切可分离</span>
+            <div className="spacer" />
+          </>
+        )}
       </header>
 
-      <main className="layout">
-        <PageList
-          pages={pages}
-          badgesForId={badgesForId}
-          onMove={movePage}
-          onAdd={addPage}
-          onDelete={deletePage}
-          onUpdate={updatePage}
-        />
-        <SheetView sheets={sheets} />
-        <FoldPreview
-          sheets={sheets}
-          foldOrder={foldOrder}
-          issues={issues}
-          flip={flip}
-          spread={safeSpread}
-          onSpreadChange={setSpread}
-          foldSheet={safeFoldSheet}
-          onFoldSheetChange={setFoldSheet}
-        />
-      </main>
+      {view === 'book' ? (
+        <main className="layout">
+          <PageList
+            pages={pages}
+            badgesForId={badgesForId}
+            onMove={movePage}
+            onAdd={addPage}
+            onDelete={deletePage}
+            onUpdate={updatePage}
+          />
+          <SheetView sheets={sheets} />
+          <FoldPreview
+            sheets={sheets}
+            foldOrder={foldOrder}
+            issues={issues}
+            flip={flip}
+            spread={safeSpread}
+            onSpreadChange={setSpread}
+            foldSheet={safeFoldSheet}
+            onFoldSheetChange={setFoldSheet}
+          />
+        </main>
+      ) : (
+        <GangWorkspace />
+      )}
     </>
   )
 }
